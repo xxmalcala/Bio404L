@@ -85,17 +85,17 @@ and setup your lab notebook webpage!
 
 7. Adding your changes to "stage" them to upload
    ```bash
-   CODE GOES HERE
+   git add .
    ```
 
 8. Committing those changes before pushing them!
    ```bash
-   CODE GOES HERE
+   git commit -m "something goes here"
    ```
 
 9. Pushing those changes
    ```bash
-   CODE GOES HERE
+   git push
    ```
 
    Please do **not** store your git-token here! This will be publicly available.
