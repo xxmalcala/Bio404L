@@ -1,5 +1,5 @@
 ---
-title: "Xyrus'S Lab Notebook"
+title: "YOUR-NAME'S Lab Notebook"
 format: html
 ---
 # Using the lab notebook

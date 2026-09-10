@@ -25,3 +25,4 @@ format:
     linkcolor: "#4A7862"
     backgroundcolor: "#faf8f6"
     code-block-bg: "#EEEEEE"
+    highlight-style: github

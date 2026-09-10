@@ -1,6 +1,6 @@
 ---
 title: "Accessing W&M's HPC"
-author: "Xyrus"
+author: "YOUR-NAME"
 date: 2026-08-31
 projects: "guided-learning"
 keywords:
@@ -289,9 +289,9 @@ It is nice to keep your job submission scripts together, staying organized is KE
 ### Making our first job-submission-script
 
 We will actually be submitting a job to make our container ***and*** install some software!
-The easiest option is to use an existing text editor in the terminal, `pico`
+The easiest option is to use an existing text editor in the terminal, `nano`
 
-1. Open a new file, `prep_conda_env.sh`, with `pico`
+1. Open a new file, `prep_conda_env.sh`, with `nano`
    Your screen should be empty!
 
 2. Copy and paste the template for our job submission that was found in the last section
@@ -327,7 +327,7 @@ In it we will install several pieces of software:
    ```
    :::
 
-7. Exit the `pico` editor with `ctl`+`x`
+7. Exit the `nano` editor with `ctl`+`x`
 
 8. Submitting the job to run is incredibly easy! You will just use `sbatch`
    ```bash

@@ -1,6 +1,6 @@
 ---
 title: "Working with GitHub"
-author: "Xyrus"
+author: "YOUR-NAME"
 date: 2026-08-31
 projects: "guided-learning"
 keywords:
