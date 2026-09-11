@@ -5,10 +5,7 @@ date: 2026-09-09
 projects: "guided-learning"
 keywords:
   - salmon
-  - star
   - read-mapping
-  - sam
-  - bam
   - hpc
 ---
 
@@ -30,373 +27,277 @@ adjust any specific commands accordingly.
 ---
 
 ### Overview of today's lab
-Today's lab will include downloading and manipulating raw sequencing data stored in NCBI's
-short read archive.
+Today's lab will include preparing data for transcript quantification with the
+pseudo-alignment tool, [Salmon](https://combine-lab.github.io/salmon/getting-started/introduction/).
 
-This is the first step to many downstream analyses. While not always required, it is a
-crucial and common step for numerous bioinformatics analyses. While the individual steps
-do not take much time to perform, it is crucial to build your familiarity with job submission
-scripts and moving data from local to remote hosts (i.e., your laptop to/from the HPC).
+This work largely includes uploading and downloading data to and from the W&M's HPC.
+The transcriptome and genome are already prepared for you, along with the list of
+"decoys" (genome sequence names), which Salmon requires.
+
+As in prior guided-labs, this lab will walkthrough the quantification using
+***only one*** of the sequencing runs. You will need to repeat this for all of them.
+
+It is important to acknowledge that there are existing tools/workflows that do
+automate many of these steps for you, such as the fantastic NextFlow-Core's
+[RNA-seq workflow](https://github.com/nf-core/rnaseq). While this emphasizes
+reproducibility, the greatest aim in this lab course is to build your comfort
+interacting with the HPC and handling files. This is where repetition is really
+powerful, as it really is **practice, practice, practice**!
 
 Make sure to ask questions as needed!
 
-### Downloading, inspecting, and trimming SRA datasets
+### Moving files, `Salmon`, EDA!
 - [ ] Logging on to the HPC!
-- [ ] Making a job submission script
-- [ ] Downloading SRA datasets
-- [ ] Running QC analyses
-- [ ] Trimming the reads
-- [ ] Checking the QC of the trimmed reads!
+- [ ] Uploading files to the HPC
+- [ ] Quantifying transcript abundance
+- [ ] Downloading the resulting table(s)!
+- [ ] Basic exploratory data analysis
 
-## Before we get started
-Today, we will be using previously published data from Zhao **et al.** (2015). On
-Blackboard you will see a PDF of the paper, as well as the `DGE.Drosophila.Metadata.csv`
-file. You will need the information in this file, which includes all the relevant
-metadata associated with the experiment. While you will rely on this file today to
-download the raw sequencing data (`SRR numbers`), you will be updating this file
-in the next `qmd` file, as this lab/page is focused **solely** on the initial
-data downloading and processing.
+---
 
+## Preparing today's lab
+Today, we will be using previously published *Drosophila melanogaster* genome and
+transcriptome, which were taken from NCBI's RefSeq database, along with a file
+containing the names of the genome sequences (these will be Salmon's "decoys").
 
-## Downloading data
+This will include uploading files to the HPC and doing a little bit of file
+manipulation to prepare everything.
 
-## Preparing the index
+1. Download the files for today from Blackboard
+   - `Drosophila.Genome.fasta`
+   - `Drosophila.Transcriptome.fasta`
+   - `Drosophila.decoys.txt`
 
-1. use `cat` to merge the transcriptome and genome together
-   ```bash
-   cat transcriptome genome > merged
-   ```
+2. Open **two** terminal windows.
 
-2. index the thing
-   ```bash
-   salmon index -t transcriptome.fasta -i dmel_index -p 8 -d decoys.txt
-   ```
+3. In **one** of those terminals, log onto the HPC
 
-## Quantify some stuff!
+4. On the HPC and in your lab folder in `scr10`, you should (hopefully) have a
+`transcript_quantification` folder. If you do not, then make one
+**in your lab folder**
 
-1. for each, just need to run...
-```bash
-salmon quant -i dmel_index \
-    -l A \
-    -1 forward.fastq.gz \
-    -2 reverse.fastq.gz \
-    -p 8
-    -o name_quant
-```
-
-We are going to first access the HPC again, as you did in our first lab. Refer to
-your notes as needed!
-
-1. Download your empty lab reposity from GitHub (only need to do this the first day)
-   ```bash
-   ssh wm-username@bora.sciclone.wm.edu
-   ```
-
-2. Move into your lab folder (this should be in the `scr10` directory)
+5. Move into the `transcript_quantification` folder
    ```bash
    YOUR CODE HERE
    ```
 
-3. Make a new directory called `raw_read_prep` if you have not already!
+6. Use `pwd` to view the `PATH` to this folder. Make sure to copy this path!
+
+7. You will use your **local** terminal (not connected to the HPC) to upload data
+to the `transcript_quantification`.
+   ```bash
+   scp [DRAG-FILE-TO-TERMINAL] wm-username@bora.sciclone.wm.edu:[PASTE-THE-PWD-PATH]
+   ```
+
+   `scp` works by moving files **from** a location **to** another location.
+
+   By putting the files from your computer first, `scp` will copy those files **from**
+   your computer **to** the HPC. Later, we will do the reverse.
+
+8. Once your **local** terminal says the files have uploaded, you can close it.
+
+9. In the remote (HPC) terminal, check that the files are there.
 
    ::: {.callout-tip title="In case you get stumped" collapse="true"}
-   Use the `mkdir` command to make a new directory!
+   Use the `ls` command to view everything in your folder!
    ```bash
-   mkdir raw_read_prep
+   ls
    ```
    :::
 
-4. Move into your new `raw_read_prep` folder
+   You should see all three files there!
 
-   ::: {.callout-tip title="In case you get stumped" collapse="true"}
-   Use the `cd` command to move into your new directory!
-   ```bash
-   cd raw_read_prep
-   ```
-   :::
+10. Make a new folder for `Salmon`'s outputs, `Salmon_Quant`
 
-5. Load miniforge3 to get access to `conda`
-
-   ::: {.callout-tip title="In case you get stumped" collapse="true"}
-   ```bash
-   module load miniforge3/24.9.2-0
-   ```
-   :::
-
-6. Activate your `sra_prep` container
-
-   ::: {.callout-tip title="In case you get stumped" collapse="true"}
-   ```bash
-   conda activate sra_prep
-   ```
-   :::
-
-Great! Hopefully the navigation is getting easier!
+    ::: {.callout-tip title="In case you get stumped" collapse="true"}
+    Use the `mkdir` command to make a new folder!
+    ```bash
+    mkdir Salmon_Quant
+    ```
+    :::
 
 ---
 
-## Downloading SRA datasets
+## Preparing the `Salmon` index
 
-You will need to make a copy of your job submission script that you created
-during last week's lab, which you can then edit to make it easy to download and
-process your raw read downloads!
+`Salmon` is a pseudo-alignment tool, which quickly "aligns" your raw reads to
+a transcriptome. To do make this fast and accurate, `Salmon` needs the transcriptome
+formatted in a specific way to facilitate its work. This is called `indexing` and
+is a common step for many bioinformatic tools.
 
-1. Make sure you are in the `raw_read_prep` folder
+1. To generate the indexed dataset for `Salmon`, we need to prepare a file with
+the transcriptome **and** genome together since we are using the genome as a "decoy"
+to improve the mRNA quantification. This is easily done with another wonderful
+terminal command, `cat`.
 
-   ::: {.callout-tip title="In case you get stumped" collapse="true"}
-   Use the `cd` command to move into your new directory!
+   `cat` can either show you everything inside a file or "concatenate" (merge)
+   files together. Today we will merge the genome and transcriptome.
+
+   ::: {.callout-tip title="How `cat` works"}
+   `cat` merges files together in the order that you provide them. This means that
+   every subsequent file is "merged" to the bottom of the prior file(s).
+
+   This is really important as `Salmon` expects the genome (our "decoy") sequences
+   to be at the bottom of the file. So you just put the transcriptome first followed by
+   the genome and make sure to store the output, using `>` to a new file.
+
+   The command is below to help illustrate this! While we are using just two files,
+   this command will work for any number of files!
+
    ```bash
-   cd raw_read_prep
+   cat Drosophila.Transcriptome.fasta Drosophila.Genome.fasta > Drosophila.Txm_Gnm.fasta
    ```
    :::
 
-2. Make a copy of last week's slurm script and rename it `sra_download.sh`
-   ```bash
-   cp ../Slurm_Scripts/prep_conda_env.sh ../Slurm_Scripts/sra_download.sh
-   ```
-
-   Did you notice that the above command uses **relative** paths to copy (`cp`) the file!
-
-3. You need to edit the contents of the new `sra_download.sh` file! Use `nano` to
-start editing the file
-
-   ::: {.callout-tip title="In case you get stumped" collapse="true"}
-   ```bash
-   nano ../Slurm_Scripts/sra_download.sh
-   ```
-   :::
-
-4. We will start by making a `for loop` using `bash` to download three of the
-sequencing runs. You will be using `prefetch` to download the data. `prefetch` is
-part of the `sratools` suite of tools that NCBI has released to make it easier to
-access raw sequencing data from the `SRA` repository.
-
-   Make sure to delete the existing command inside the file. Then add the following
-   `for loop`.
-   ```bash
-   for seqrun in SRR1576457 SRR1576458 SRR1576459
-   do
-    prefetch -v $seqrun
-   done
-   ```
-
-   Make sure to update the job-name! And this may take a little bit of time, so do not be alarmed!
-
-5. Submit your job!
+2. You can now remove the `Drosophila.Transcriptome.fasta` and `Drosophila.Genome.fasta`
+files from the HPC.
 
    ::: {.callout-tip title="In case you get stumped" collapse="true"}
    ```bash
-   sbatch ../Slurm_Scripts/sra_download.sh
+   rm some-file
    ```
    :::
 
-6. Check that your submitted batch job is running
+3. Now we can prepare to generate the `Salmon` index. First, load `conda` and
+activate the `txpt_quant` container.
+
+   If you do not have the `txpt_quant` container, refer back to the
+   `access-setup-hpc` guided lab on how to make new containers and install software.
+
+4. With your container active, you need to make another job submission script! Go
+ahead and copy the `fastq_trim.sh` script and save it as `salmon_run.sh`.
+
+5. Inside this script, you will need to remove the exising `fastp` command, then add
+the following commands to generate the `index` that `Salmon` needs for our *Drosophila*
+data.
    ```bash
-   squeue --m
+   salmon index \
+        -p 8 \
+        -d decoys.txt \
+        -i dmel_index \
+        -t Drosophila.Txm_Gnm.fasta
    ```
 
-7. You can also check to see how many of the sequencing runs are downloaded/downloading
-using the `ls` command. `prefetch` downloads the files into their own folders!
-
-8. While there are ***nine*** more files to download, they will be up to you to
-do on your own during the lab today. So feel free to reference this section as needed.
-
-   You will need to make sure to edit the script, and update the sequencing run numbers.
-
-   If you want, you can make edits to your job submission script, submit it using `sbatch`,
-   and repeat! As soon as the job is submitted the contents of your job submission
-   script are "remembered" by the head-node, so you are free to add more jobs to the queue!
-
-
-## Unpacking SRA datasets
-If you were curious and used `ls` to peek into those newly created folders, you
-would have seen a file ending in `.sra`. This is the packed (compressed) raw data!
-
-We need to unpack it using the tool `parallel-fastq-dump`.
-
-Below, is a walkthrough of one way to do this. It is a bit involved, but it will
-make it easy to link the file to the existing metadata!
-
-*You should repeat the following steps for each file*
-
-1. Make a copy of last week's slurm script and rename it `sra_fastq_dump.sh`
-   ```bash
-   cp ../Slurm_Scripts/prep_conda_env.sh ../Slurm_Scripts/sra_fastq_dump.sh
-   ```
-
-2. Make some extra edits to this file!
-   - [ ] update the `job-name`
-   - [ ] update the `--ntasks` value to `8`
-   - [ ] delete the old command
-
-3. Now we will add the command to run `parallel-fastq-dump`
-   ```bash
-   parallel-fastq-dump --split-files \
-        --gzip \
-        --threads 8 \
-        -s SRR1576457 \
-        -O Dmel_Maine_21C_Rep1
-   ```
-
-   Here is a breakdown of the command:
-   - `--split-files`: separate the file into `forward` and `reverse` reads (the data are paired-end!)
-   - `--gzip`: these raw `fastq` files can be big, so we will keep them compressed
-   - `--threads 8`: tells the HPC to multi-task on this job, splitting the job into 8 pieces to speed it up
-   - `-s SRR#`: tells the tool which dataset we want to process
-   - `-O NAME`: the name we want the output folder to be. It is typically nice to include the metadata and/or the `SRR accession` (or both)
-
-4. Using `sbatch`, submit the job!
-
-5. Repeat for the other datasets that have ***FINISHED*** downloading.
-Use `squeue --m` to check that the files you are trying to unpack have finished downloading!
-
-6. As before, it is up to you to unpack the rest of the datasets during our time
-in lab (or outside if that's easier). So long as one of the sequencing runs is
-downloaded and unpacked, you can move on to the last section, which is trimming
-and the quality checking!
-
-## Trimming raw SRA datasets
-If you were curious and used `ls` to peek into those newly created folders, you
-would have seen a file ending in `.sra`. This is the packed (compressed) raw data!
-
-We need to unpack it using the tool `parallel-fastq-dump`.
-
-Below, is a walkthrough of one way to do this. It is a bit involved, but it will
-make it easy to link the file to the existing metadata!
-
-*You should repeat the following steps for each file*
-
-1. Make a copy of the `sra_fastq_dump.sh` slurm script and rename it `fastq_trim.sh`
+6. All you need to do now is submit the job submission script!
 
    ::: {.callout-tip title="In case you get stumped" collapse="true"}
    ```bash
-   cp ../Slurm_Scripts/prep_conda_env.sh ../Slurm_Scripts/sra_fastq_trim.sh
+   sbatch salmon_run.sh
    ```
    :::
 
-2. You will need to edit the newly copied script, `sra_fastq_trim.sh`. As the prior
-script already was set up for multi-threading (`--ntasks=8`), the only change is to
-replace the prior command with one for our read-trimming tool, `fastp`.
+---
 
-   The command is below, followed by a breakdown of the options. The below command
-   is written for just ***one*** file, so you will need to adjust this!
+## Quantify Transcript Abundance!
 
+With the index prepared, it is fairly easy to start quantifying transcript abundance
+from **each** of the trimmed reads, which were prepared before.
+
+1. First, let's update the existing `salmon_run.sh` file. This time instead of
+deleting the command, let's leave it there. However, add one `#` in front of each
+line in the command to "comment out" the command. This will prevent it from being
+run each time this script is submitted.
+
+   This is a nice way to leave useful bits of code in these job submission scripts
+   that we use rarely. It can serve as a nice reference for later!
+
+2. Now add the command to run the quantification to the `salmon_run.sh` script.
    ```bash
-   fastp \
-        -i Dmel_Maine_21C_Rep1/SRR1576457_1.fastq.gz \
-        -I Dmel_Maine_21C_Rep1/SRR1576457_2.fastq.gz \
-        -o Dmel_Maine_21C_Rep1.Fwd.20q.80nt.fastq.gz \
-        -O Dmel_Maine_21C_Rep1.Rev.20q.80nt.fastq.gz \
-        -h Dmel_Maine_21C_Rep1.html \
-        -R "Dmel_Maine_21C_Rep1 Report" \
-        -q 20  \
-        -l 80 \
-        -w 8 \
-        -r
+   salmon quant -i dmel_index \
+      -l A \
+      -1 forward.fastq.gz \
+      -2 reverse.fastq.gz \
+      -p 8
+      -o Salmon_Quant/outname_Quant
+   ```
+   There are some placeholder names that you can update!
+
+::: {.callout-caution}
+The steps below are to show you how to run the transcript quantification with **just one**
+set of trimmed reads.
+
+You will need to update the names as appropriate.
+
+This *can* be automated a bit more, but I want to stress that being pushed to touch
+and update these files repeatedly will help it become more familiar and easy to do!
+:::
+
+3. For each of the sets of reads, it would be best to provide the **full** path to
+the trimmed reads in the script. Especially, as you should be working in your
+`transcript_quantification` folder, we do not have to any confusing navigation.
+
+   In the code below are the `PATH`s to ***my*** files. You should update it accordingly!
+   ```bash
+   salmon quant \
+        -i dmel_index \
+        -l A \
+        -1 /sciclone/scr10/xxmaureralcala/Biol404L/raw_read_prep/Dmel_Maine_21C_Rep1.Fwd.20q.80nt.fastq.gz \
+        -2 /sciclone/scr10/xxmaureralcala/Biol404L/raw_read_prep/Dmel_Maine_21C_Rep1.Rev.20q.80nt.fastq.gz \
+        -p 8 \
+        -o Salmon_Quant/Dmel_Maine_21C_Rep1_Quant
    ```
 
-   Here is a breakdown of the command:
-   - `-i`: PATH to your `forward` reads
-   - `-I`: PATH to your `reverse` reads
-   - `-o`: what to name your trimmed `forward` reads
-   - `-O`: what to name your trimmed `reverse` reads
-   - `-h`: what to name the output quality score `html` file
-   - `-R`: the report name to add to the output quality score `html` file
-   - `-q`: minimum Phred quality score to use for read trimming
-   - `-l`: minimum read length to keep a read following trimming
-   - `-w`: number of threads to use (this should ideally be the same as `--ntasks`)
-   - `-r`: perform the per-base trimming starting on the right side of the read
+   You can see that I added the sample information to the `-o` to make it clear
+   which set of trimmed reads were being processed.
 
+4. Submit the `salmon_run.sh` script and feel free to update it with new sets of
+reads and repeat!
 
+5. Sit back and rest for a moment! We are finally about to touch some results! Yay!
 
-4. Using `sbatch`, submit the job!
+---
 
-5. Repeat for the other datasets that have ***FINISHED*** unpacking with `parallel-fastq-dump`.
-Use `squeue --m` to check that the files you are trying to unpack have finished downloading!
+## Downloading the `Salmon` quantification files
 
-## Cleaning up after ourselves
-By now, you will have tons of files, all sitting inside your `raw_read_prep` folder.
-We do need to make sure to clean-up after ourselves on the HPC, as we have many
-"intermediate" files, which take up a reasonably large amount of space.
+We will be using R-Studio for a brief moment, before downloading the output
+transcript-level quantification files from `Salmon`
 
-To do our cleanup, we will be using a *dangerous* command, `rm`. What makes this
-command so dangerous is that it removes the files/folders permanently. This is like
-moving a file to your trash on your computer and tossing the trash out at the same
-time.
+1. With R-Studio open, go to the `File` menu and select `New Project`
 
-Take your time when doing this! We will remove files little bit by little bit.
+2. In the pop-up menu select `New Directory`
 
-1. Running and submitting jobs to SLURM will generate a ton of "slurm.out" files.
-These are logs from the HPC and the tool(s) you used. Typically, you won't need
-these for very long, outside of handling errors.
+3. Then choose `New Project` and name the new directory `Guided_DGE_Analysis`
 
-   We can remove all of these in one step!
+4. When prompted, use the menu to put this project as a `sub-directory` of your
+`Desltop`
 
-   ::: {.callout-warning title="Removing slurm logs"}
+5. You should see the `Guided_DGE_Analysis` on your `Desktop`
+
+6. Inside that folder, make the following new folders
+   - [ ] `quant_data`
+   - [ ] `metadata`
+   - [ ] `results`
+
+7. Open a new terminal and move into `quant_data` folder
+
+   ::: {.callout-tip title="In case you get stumped" collapse="true"}
    ```bash
-   rm slurm-*.out
+   cd [PATH-TO-DRAG-QUANT-DATA-FOLDER]
    ```
    :::
 
-   `rm` followed by a file, will remove the file. You can also use the `wildcard`
-   character, `*`. In the example above, the way this is put in the command effectively
-   tells the computer "remove anything that startswith `slurm-` ***and*** ends with `.out`"
+8. Once inside your `quant_data`, we can download ALL of the `Salmon` outputs.
+Each sample will be in its own folder. To make it easy, get the `PATH`, using `pwd`,
+to the `Salmon_Quant` folder on the HPC.
 
-2. Make sure to remove all the files that end with `.json` as we do not need these!
+   **Make sure you are in the `quant_data` folder before continuing!
 
-   ::: {.callout-warning title="Removing slurm logs"}
+   When ready, we will use `scp` to download the data **from** the HPC **to** our
+   `quant_data` folder locally.
+
+   In your **local** terminal, use `scp` to download the data.
+
    ```bash
-   rm *.json
+   scp -r wm-username@bora.sciclone.wm.edu:[PATH-TO-SALMON-QUANT-DATA-FOLDER]/Dmel* .
+   ```
+
+   ::: {.callout-tip title="For Mac Users" collapse="true"}
+   Sometimes the terminal hates the `wildcard` character, `*`. To force it to use
+   it in a way that makes sense, you just need to slightly adjust the `scp` command
+   ```bash
+   scp -r wm-username@bora.sciclone.wm.edu:[PATH-TO-SALMON-QUANT-DATA-FOLDER]/Dmel\* .
    ```
    :::
-
-3. This step is for any sequencing runs that have been **fully** processed, which includes downloading,
-unpacking, trimming. We will start by removing each of the intermediate folders,
-one at a time. It is okay to do this slowly and carefully, as you don't want to need
-to do the processing over again.
-
-   Below is the command to remove just one of the folders from the initial SRR downloading
-
-   ::: {.callout-warning title="Removing Folders"}
-   ```bash
-   rm -rf SRR1576457
-   ```
-   :::
-
-   You *can* combine this with the `wildcard` to remove all of the SRR folders,
-   but you need to be very certain you have "unpacked" them!
-
-   You can also use that command to remove *any* folders, but again, please be cautious!
-
-
-## Downloading files to your local computer!
-The read trimming tool, `fastp`, automatically generates quality score reports for you
-to peruse! The only trouble is that these are stored on the HPC and you will need
-to download them to your computer to view.
-
-In a new terminal window, move to your Desktop. If you want, you can make a folder
-specifically for these files, since the aim here is to really just look at them once.
-
-I would not store them in the lab folder that is `pushed` to GitHub, but you are
-free to make a new folder and store them there!
-
-Once you are on your computer where you would like to download the files to, feel
-free to run the following steps.
-
-1. In the terminal that is logged onto the HPC, use `pwd` to get the `PATH` (location)
-of where you currently are. This should be where the `.html` files are stored.
-   ```bash
-   pwd
-   ```
-
-   Copy the output location! You will paste it in the next command!
-
-   Download ***all*** the `.html` to your current working directory on your
-laptop.
-
-   ```bash
-   scp wm-username@bora.sciclone.wm.edu:PASTE-YOUR-PATH
-   ```
 
 ---
 
@@ -409,57 +310,58 @@ Also, what a great way to practice this week :)
 
 Below, the steps are numbered with emtpy code blocks below them. Copy-paste your commands there!
 
-1. Use `ssh` to log onto `bora`
+1. Log onto the HPC
    ```bash
-   CODE GOES HERE
+   YOUR CODE HERE
    ```
 
-2. Move into your `raw_read_prep` directory inside your Biol404L directory
+2. Move into your `transcript_quantification` folder on the HPC
    ```bash
-   CODE GOES HERE
+   YOUR CODE HERE
    ```
 
-3. Activate your conda `sra_prep` container (make sure to load miniforge3 first)
+3. In a new terminal, copy files for today's lab to the `transcript_quantification`
+folder on the HPC
    ```bash
-   CODE GOES HERE
+   YOUR CODE HERE
    ```
 
-4. Edit your `sra_download.sh` script to add, change, remove SRA accession numbers
-to download
+4. Prepare the `Salmon` index files! -- ONLY NEEDS TO BE DONE ONE TIME!
+   a. Merge the transcriptome and genome files into one file
+      ```bash
+      YOUR CODE HERE
+      ```
+
+   b. Edit your `salmon_run.sh` file to run just the index-creation step
+      ```bash
+      YOUR CODE HERE
+      ```
+
+   c. Submit the `salmon_run.sh` script
+      ```bash
+      YOUR CODE HERE
+      ```
+5. Use `Salmon` to quantify transcript-level abundances
+   a. Edit your `salmon_run.sh` file to run just the quantification steps with the
+   appropriate pair of reads
+      ```bash
+      YOUR CODE HERE
+      ```
+
+   b. Submit the `salmon_run.sh` script
+      ```bash
+      YOUR CODE HERE
+      ```
+   c. Repeat!
+
+6. In your local terminal, move into the `quant_data` folder inside the
+`Guided_DGE_Analysis` folder that you already created
    ```bash
-   CODE GOES HERE
+   YOUR CODE HERE
    ```
 
-5. Run your `sra_download.sh` script
+7. Download all the outputs from the `Salmon_Quant` folder on the HPC to the
+`quant_data` on your computer
    ```bash
-   CODE GOES HERE
+   YOUR CODE HERE
    ```
-
-6. Edit your `sra_fastq_dump.sh` script to change the SRA accession numbers to unpack
-and the output folder to store them.
-   ```bash
-   CODE GOES HERE
-   ```
-
-7. Run your `sra_fastq_dump.sh` script
-   ```bash
-   CODE GOES HERE
-   ```
-
-8. Edit your `fastq_trim.sh` script to change the compressed fastq files to trim
-and the output names to save them.
-   ```bash
-   CODE GOES HERE
-   ```
-
-9. Run your `fastq_trim.sh` script
-   ```bash
-   CODE GOES HERE
-   ```
-
-10. Remember your cleaning commands!
-    ```bash
-    CODE GOES HERE
-    ```
-
-Make a small reference guide of steps for yourself down here!
