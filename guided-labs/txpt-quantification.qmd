@@ -46,12 +46,12 @@ powerful, as it really is **practice, practice, practice**!
 
 Make sure to ask questions as needed!
 
-### Moving files, `Salmon`, EDA!
+### Moving files, `Salmon`, Transcript Abundance!
 - [ ] Logging on to the HPC!
 - [ ] Uploading files to the HPC
 - [ ] Quantifying transcript abundance
 - [ ] Downloading the resulting table(s)!
-- [ ] Basic exploratory data analysis
+- [ ] Setting up for Differential Gene Expression
 
 ---
 
